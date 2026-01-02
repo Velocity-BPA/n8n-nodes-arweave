@@ -1,0 +1,32 @@
+# Source files
+credentials/
+nodes/
+index.ts
+
+# Config files
+tsconfig.json
+.eslintrc.js
+.prettierrc
+jest.config.js
+
+# Tests
+test/
+coverage/
+*.test.ts
+*.spec.ts
+
+# Development
+.github/
+.vscode/
+.idea/
+scripts/
+
+# Documentation (keep README)
+COMMERCIAL_LICENSE.md
+LICENSING_FAQ.md
+
+# Build artifacts
+*.log
+.DS_Store
+.env*
+*.tmp
