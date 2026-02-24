@@ -1,35 +1,24 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
     "target": "es2019",
-    "lib": ["es2019", "es2020.promise", "es2020.bigint", "es2020.string"],
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "removeComments": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
+    "module": "commonjs",
+    "lib": ["es2019"],
     "outDir": "./dist",
-    "rootDir": ".",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["./node_modules/*"]
-    },
-    "types": ["node", "jest"]
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true
   },
   "include": [
-    "credentials/**/*.ts",
-    "nodes/**/*.ts",
-    "index.ts"
+    "nodes/**/*",
+    "credentials/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "test"
+    "dist"
   ]
 }
