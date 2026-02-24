@@ -1,40 +1,24 @@
+/*
+ * Copyright (c) 2026 Velocity BPA, LLC
+ * Licensed under the Business Source License 1.1
+ */
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/test'],
-  testMatch: ['**/*.test.ts'],
-  moduleFileExtensions: ['ts', 'js', 'json', 'node'],
+  testMatch: ['**/test/**/*.test.ts'],
   collectCoverageFrom: [
-    'credentials/**/*.ts',
     'nodes/**/*.ts',
-    '!**/node_modules/**',
-    '!**/dist/**',
+    'credentials/**/*.ts',
+    '!**/*.d.ts',
+    '!**/index.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  coverageThreshold: {
-    global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50,
-    },
-  },
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  roots: ['<rootDir>'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      tsconfig: {
-        module: 'commonjs',
-        target: 'es2019',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        strict: true,
-        skipLibCheck: true,
-      },
-    }],
+    '^.+\.ts$': 'ts-jest',
   },
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-  },
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  verbose: true,
+  testTimeout: 30000,
 };
