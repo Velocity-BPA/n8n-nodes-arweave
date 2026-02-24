@@ -1,86 +1,52 @@
 {
   "name": "n8n-nodes-arweave",
   "version": "1.0.0",
-  "description": "A comprehensive n8n community node for Arweave permanent decentralized storage providing 13 resources and 70+ operations for data storage, retrieval, transactions, and smart contracts.",
-  "license": "BUSL-1.1",
-  "author": {
-    "name": "Velocity BPA",
-    "email": "licensing@velobpa.com",
-    "url": "https://velobpa.com"
+  "description": "n8n community node for Arweave",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "main": "dist/nodes/Arweave/Arweave.node.js",
+  "packageManager": "pnpm@9.1.4",
+  "engines": {
+    "node": ">=18.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Velocity-BPA/n8n-nodes-arweave.git"
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "format": "prettier nodes credentials --write",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "prepublishOnly": "npm run build"
   },
-  "homepage": "https://github.com/Velocity-BPA/n8n-nodes-arweave",
-  "bugs": {
-    "url": "https://github.com/Velocity-BPA/n8n-nodes-arweave/issues"
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.16.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
+    "gulp": "^4.0.2",
+    "jest": "^29.5.0",
+    "n8n-workflow": "*",
+    "prettier": "^3.2.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
   },
   "keywords": [
     "n8n",
     "n8n-community-node-package",
     "arweave",
-    "permanent-storage",
-    "decentralized",
     "blockchain",
-    "web3",
-    "smartweave",
-    "bundlr",
-    "irys",
-    "data-storage",
-    "nft",
-    "dapp"
-  ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/ArweaveApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/Arweave/Arweave.node.js",
-      "dist/nodes/Arweave/ArweaveTrigger.node.js"
-    ]
-  },
-  "scripts": {
-    "build": "tsc && npm run copy:icons",
-    "copy:icons": "cp -r nodes/Arweave/*.svg dist/nodes/Arweave/ 2>/dev/null || true",
-    "dev": "tsc --watch",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "format": "prettier --write \"**/*.ts\"",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "test:watch": "jest --watch",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "npm run build"
-  },
-  "dependencies": {
-    "crypto-js": "^4.2.0"
-  },
-  "peerDependencies": {
-    "n8n-workflow": "*"
-  },
-  "devDependencies": {
-    "@types/crypto-js": "^4.2.2",
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.11.30",
-    "@typescript-eslint/eslint-plugin": "^7.3.1",
-    "@typescript-eslint/parser": "^7.3.1",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-n8n-nodes-base": "^1.16.1",
-    "jest": "^29.7.0",
-    "n8n-workflow": "*",
-    "prettier": "^3.2.5",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.3"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+    "storage"
+  ]
 }
