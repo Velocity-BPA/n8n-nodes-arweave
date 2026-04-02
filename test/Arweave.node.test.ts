@@ -33,20 +33,20 @@ describe('Arweave Node', () => {
       expect(node.description.outputs).toContain('main');
     });
 
-    it('should define 6 resources', () => {
+    it('should define 5 resources', () => {
       const resourceProp = node.description.properties.find(
         (p: any) => p.name === 'resource'
       );
       expect(resourceProp).toBeDefined();
       expect(resourceProp!.type).toBe('options');
-      expect(resourceProp!.options).toHaveLength(6);
+      expect(resourceProp!.options).toHaveLength(5);
     });
 
     it('should have operation dropdowns for each resource', () => {
       const operations = node.description.properties.filter(
         (p: any) => p.name === 'operation'
       );
-      expect(operations.length).toBe(6);
+      expect(operations.length).toBe(5);
     });
 
     it('should require credentials', () => {
@@ -68,759 +68,92 @@ describe('Arweave Node', () => {
 
   // Resource-specific tests
 describe('Transaction Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://arweave.net',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('submitTransaction', () => {
-    it('should submit a transaction successfully', async () => {
-      const mockTransactionData = {
-        target: 'test-target',
-        quantity: '1000000000000',
-        data: 'test-data',
-      };
-      const mockSignature = 'test-signature';
-      const mockResponse = { id: 'test-transaction-id', status: 'pending' };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'submitTransaction';
-        if (param === 'transactionData') return mockTransactionData;
-        if (param === 'signature') return mockSignature;
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://arweave.net/tx',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-api-key',
-        },
-        body: {
-          ...mockTransactionData,
-          signature: mockSignature,
-        },
-        json: true,
-      });
-    });
-
-    it('should handle errors when submitting transaction', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'submitTransaction';
-        if (param === 'transactionData') return {};
-        if (param === 'signature') return 'test-signature';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-
-      const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
-
-  describe('getTransaction', () => {
-    it('should retrieve transaction details successfully', async () => {
-      const mockTransactionId = 'test-transaction-id';
-      const mockResponse = {
-        id: mockTransactionId,
-        last_tx: 'last-transaction-id',
-        owner: 'owner-key',
-        target: 'target-address',
-        quantity: '1000000000000',
-        data: 'data-hash',
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransaction';
-        if (param === 'transactionId') return mockTransactionId;
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: `https://arweave.net/tx/${mockTransactionId}`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-api-key',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getTransactionStatus', () => {
-    it('should retrieve transaction status successfully', async () => {
-      const mockTransactionId = 'test-transaction-id';
-      const mockResponse = {
-        block_indep_hash: 'block-hash',
-        block_height: 12345,
-        number_of_confirmations: 10,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransactionStatus';
-        if (param === 'transactionId') return mockTransactionId;
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: `https://arweave.net/tx/${mockTransactionId}/status`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-api-key',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getTransactionAnchor', () => {
-    it('should retrieve transaction anchor successfully', async () => {
-      const mockResponse = 'anchor-hash-value';
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransactionAnchor';
-        return '';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://arweave.net/tx_anchor',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-api-key',
-        },
-        json: true,
-      });
-    });
-  });
-});
-
-describe('Data Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://arweave.net',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  test('uploadData operation should upload data successfully', async () => {
-    const mockResponse = { id: 'test-tx-id', signature: 'test-signature' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'uploadData';
-        case 'dataPayload': return 'test data';
-        case 'tags': return [{ name: 'Content-Type', value: 'text/plain' }];
-        case 'target': return '';
-        case 'quantity': return '0';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeDataOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://arweave.net/tx',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-api-key',
-      },
-      body: expect.any(String),
-      json: false,
-    });
-  });
-
-  test('getData operation should retrieve data successfully', async () => {
-    const mockResponse = { data: 'retrieved data', id: 'test-tx-id' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getData';
-        case 'transactionId': return 'test-tx-id';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeDataOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://arweave.net/test-tx-id',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-      },
-      json: true,
-    });
-  });
-
-  test('getRawData operation should retrieve raw data successfully', async () => {
-    const mockResponse = 'raw data content';
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getRawData';
-        case 'transactionId': return 'test-tx-id';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeDataOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'GET',
-      url: 'https://arweave.net/raw/test-tx-id',
-      headers: {
-        'Authorization': 'Bearer test-api-key',
-      },
-      json: false,
-    });
-  });
-
-  test('uploadChunk operation should upload chunk successfully', async () => {
-    const mockResponse = { chunk_id: 'test-chunk-id' };
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'uploadChunk';
-        case 'chunkData': return 'chunk data';
-        case 'dataRoot': return 'test-data-root';
-        case 'dataSize': return 1024;
-        case 'offset': return 0;
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeDataOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://arweave.net/chunk',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer test-api-key',
-      },
-      body: expect.any(String),
-      json: false,
-    });
-  });
-
-  test('should handle API errors properly', async () => {
-    const mockError = new Error('API request failed');
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getData';
-        case 'transactionId': return 'invalid-tx-id';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-    await expect(executeDataOperations.call(mockExecuteFunctions, [{ json: {} }])).rejects.toThrow();
-  });
-
-  test('should continue on fail when enabled', async () => {
-    const mockError = new Error('API request failed');
-    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-    mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-      switch (param) {
-        case 'operation': return 'getData';
-        case 'transactionId': return 'invalid-tx-id';
-        default: return undefined;
-      }
-    });
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-    const result = await executeDataOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual({ error: 'API request failed' });
-  });
-});
-
-describe('GraphQLQuery Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://arweave.net',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  test('executeQuery should execute GraphQL query successfully', async () => {
-    const mockResponse = {
-      data: {
-        transactions: {
-          edges: [
-            {
-              node: {
-                id: 'test-tx-id',
-                owner: { address: 'test-address' },
-              },
-            },
-          ],
-        },
-      },
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation':
-          return 'executeQuery';
-        case 'query':
-          return 'query { transactions { edges { node { id } } } }';
-        case 'variables':
-          return '{}';
-        default:
-          return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-      method: 'POST',
-      url: 'https://arweave.net/graphql',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: 'query { transactions { edges { node { id } } } }',
-        variables: {},
-      }),
-      json: true,
-    });
-  });
-
-  test('getSchema should retrieve GraphQL schema successfully', async () => {
-    const mockSchema = {
-      data: {
-        __schema: {
-          types: [
-            {
-              name: 'Transaction',
-              kind: 'OBJECT',
-              fields: [{ name: 'id', type: { name: 'String', kind: 'SCALAR' } }],
-            },
-          ],
-        },
-      },
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockReturnValue('getSchema');
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockSchema);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockSchema);
-  });
-
-  test('queryTransactions should query transactions with filters successfully', async () => {
-    const mockResponse = {
-      data: {
-        transactions: {
-          edges: [
-            {
-              cursor: 'cursor1',
-              node: {
-                id: 'tx1',
-                owner: { address: 'owner1' },
-                recipient: 'recipient1',
-              },
-            },
-          ],
-          pageInfo: { hasNextPage: false },
-        },
-      },
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation':
-          return 'queryTransactions';
-        case 'owners':
-          return 'owner1,owner2';
-        case 'recipients':
-          return 'recipient1';
-        case 'tags':
-          return '[]';
-        case 'blockFilter':
-          return '{}';
-        case 'first':
-          return 10;
-        case 'after':
-          return '';
-        default:
-          return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-  });
-
-  test('queryBlocks should query blocks successfully', async () => {
-    const mockResponse = {
-      data: {
-        blocks: {
-          edges: [
-            {
-              cursor: 'cursor1',
-              node: {
-                id: 'block1',
-                height: 12345,
-                timestamp: 1620000000,
-                miner: 'miner1',
-              },
-            },
-          ],
-          pageInfo: { hasNextPage: false },
-        },
-      },
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation':
-          return 'queryBlocks';
-        case 'heightFilter':
-          return '{"min": 12000}';
-        case 'hashFilter':
-          return '';
-        case 'first':
-          return 10;
-        case 'after':
-          return '';
-        default:
-          return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-  });
-
-  test('getTransactionsByTags should find transactions by tags successfully', async () => {
-    const mockResponse = {
-      data: {
-        transactions: {
-          edges: [
-            {
-              cursor: 'cursor1',
-              node: {
-                id: 'tx1',
-                tags: [
-                  { name: 'Content-Type', value: 'text/plain' },
-                ],
-              },
-            },
-          ],
-          pageInfo: { hasNextPage: false },
-        },
-      },
-    };
-
-    mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-      switch (paramName) {
-        case 'operation':
-          return 'getTransactionsByTags';
-        case 'tagFilters':
-          return '[{"name": "Content-Type", "values": ["text/plain"]}]';
-        case 'sortOrder':
-          return 'HEIGHT_DESC';
-        default:
-          return undefined;
-      }
-    });
-
-    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json).toEqual(mockResponse);
-  });
-
-  test('should handle API errors gracefully', async () => {
-    mockExecuteFunctions.getNodeParameter.mockReturnValue('executeQuery');
-    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-
-    const result = await executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].json.error).toBe('API Error');
-  });
-
-  test('should throw error for unknown operation', async () => {
-    mockExecuteFunctions.getNodeParameter.mockReturnValue('unknownOperation');
-
-    await expect(
-      executeGraphQLQueryOperations.call(mockExecuteFunctions, [{ json: {} }])
-    ).rejects.toThrow('Unknown operation: unknownOperation');
-  });
-});
-
-describe('SmartWeaveContract Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://arweave.net',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('deployContract', () => {
-    it('should deploy a SmartWeave contract successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'deployContract';
-          case 'contractSource': return 'export function handle(state, action) { return { state }; }';
-          case 'initialState': return { counter: 0 };
-          case 'contractType': return 'javascript';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        id: 'test-tx-id',
-        status: 'success',
-      });
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.id).toBe('test-tx-id');
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'POST',
-          url: 'https://arweave.net/tx',
-        })
-      );
-    });
-  });
-
-  describe('getContractState', () => {
-    it('should retrieve contract state successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getContractState';
-          case 'contractId': return 'test-contract-id';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        state: { counter: 5 },
-        validity: {},
-      });
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.state.counter).toBe(5);
-    });
-  });
-
-  describe('interactWithContract', () => {
-    it('should interact with contract successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'interactWithContract';
-          case 'contractId': return 'test-contract-id';
-          case 'inputData': return { function: 'increment' };
-          case 'tags': return [];
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        id: 'interaction-tx-id',
-        status: 'success',
-      });
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.id).toBe('interaction-tx-id');
-    });
-  });
-
-  describe('getContractBalance', () => {
-    it('should get contract balance successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'getContractBalance';
-          case 'contractId': return 'test-contract-id';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('1000000000000');
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.balance).toBe(1);
-      expect(result[0].json.contractId).toBe('test-contract-id');
-    });
-  });
-
-  describe('dryRunInteraction', () => {
-    it('should dry run interaction successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        switch (param) {
-          case 'operation': return 'dryRunInteraction';
-          case 'contractId': return 'test-contract-id';
-          case 'inputData': return { function: 'increment' };
-          case 'caller': return 'test-caller-address';
-          default: return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
-        type: 'ok',
-        result: { state: { counter: 6 } },
-      });
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.type).toBe('ok');
-      expect(result[0].json.result.state.counter).toBe(6);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors gracefully when continueOnFail is true', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getContractState');
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const result = await executeSmartWeaveContractOperations.call(
-        mockExecuteFunctions,
-        [{ json: {} }]
-      );
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://arweave.net',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	it('should create a transaction successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('createTransaction')
+			.mockReturnValueOnce('Hello World')
+			.mockReturnValueOnce('test-wallet')
+			.mockReturnValueOnce([{ name: 'Content-Type', value: 'text/plain' }])
+			.mockReturnValueOnce('')
+			.mockReturnValueOnce('');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'test-transaction-id',
+			status: 'pending',
+		});
+
+		const result = await executeTransactionOperations.call(
+			mockExecuteFunctions,
+			[{ json: {} }],
+		);
+
+		expect(result).toEqual([
+			{
+				json: { id: 'test-transaction-id', status: 'pending' },
+				pairedItem: { item: 0 },
+			},
+		]);
+	});
+
+	it('should get a transaction successfully', async () => {
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getTransaction')
+			.mockReturnValueOnce('test-transaction-id');
+
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({
+			id: 'test-transaction-id',
+			data_size: '100',
+		});
+
+		const result = await executeTransactionOperations.call(
+			mockExecuteFunctions,
+			[{ json: {} }],
+		);
+
+		expect(result).toEqual([
+			{
+				json: { id: 'test-transaction-id', data_size: '100' },
+				pairedItem: { item: 0 },
+			},
+		]);
+	});
+
+	it('should handle errors when continueOnFail is true', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getTransaction');
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+		const result = await executeTransactionOperations.call(
+			mockExecuteFunctions,
+			[{ json: {} }],
+		);
+
+		expect(result).toEqual([
+			{
+				json: { error: 'API Error' },
+				pairedItem: { item: 0 },
+			},
+		]);
+	});
 });
 
 describe('Wallet Resource', () => {
@@ -829,419 +162,458 @@ describe('Wallet Resource', () => {
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://arweave.net',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        baseUrl: 'https://arweave.net'
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
       helpers: {
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn()
       },
     };
   });
 
-  describe('getWalletBalance', () => {
-    it('should get wallet balance successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getWalletBalance';
-        if (param === 'wallet_address') return 'test-wallet-address';
-      });
+  it('should get wallet balance successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getWalletBalance')
+      .mockReturnValueOnce('test-wallet-address');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('1000000000000');
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('1000000000000');
+    const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        wallet_address: 'test-wallet-address',
-        balance_winston: '1000000000000',
-        balance_ar: 1,
-      });
-    });
-
-    it('should handle wallet balance error', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getWalletBalance';
-        if (param === 'wallet_address') return 'invalid-address';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Wallet not found'));
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        error: 'Wallet not found',
-      });
-    });
+    expect(result).toHaveLength(1);
+    expect(result[0].json).toHaveProperty('walletAddress', 'test-wallet-address');
+    expect(result[0].json).toHaveProperty('balance', '1000000000000');
+    expect(result[0].json).toHaveProperty('balanceAR', 1);
   });
 
-  describe('getLastTransaction', () => {
-    it('should get last transaction successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getLastTransaction';
-        if (param === 'wallet_address') return 'test-wallet-address';
-      });
+  it('should handle wallet balance error', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getWalletBalance')
+      .mockReturnValueOnce('invalid-address');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+    
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Invalid wallet address'));
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('tx-id-123');
+    const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        wallet_address: 'test-wallet-address',
-        last_transaction_id: 'tx-id-123',
-      });
-    });
+    expect(result).toHaveLength(1);
+    expect(result[0].json).toHaveProperty('error', 'Invalid wallet address');
   });
 
-  describe('getWalletTransactions', () => {
-    it('should get wallet transactions successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        if (param === 'operation') return 'getWalletTransactions';
-        if (param === 'wallet_address') return 'test-wallet-address';
-        if (param === 'limit') return defaultValue || 10;
-        if (param === 'offset') return defaultValue || 0;
-      });
+  it('should get last transaction successfully', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getLastTransaction')
+      .mockReturnValueOnce('test-wallet-address');
+    
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('last-tx-id-123');
 
-      const mockTransactions = ['tx1', 'tx2', 'tx3'];
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransactions);
+    const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        wallet_address: 'test-wallet-address',
-        transactions: mockTransactions,
-        limit: 10,
-        offset: 0,
-      });
-    });
+    expect(result).toHaveLength(1);
+    expect(result[0].json).toHaveProperty('walletAddress', 'test-wallet-address');
+    expect(result[0].json).toHaveProperty('lastTransactionId', 'last-tx-id-123');
   });
 
-  describe('getFilteredTransactions', () => {
-    it('should get filtered transactions successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        if (param === 'operation') return 'getFilteredTransactions';
-        if (param === 'wallet_address') return 'test-wallet-address';
-        if (param === 'limit') return defaultValue || 5;
-        if (param === 'since_block') return defaultValue || 100;
-      });
+  it('should generate wallet successfully', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('generateWallet');
+    
+    const mockWallet = {
+      address: 'new-wallet-address',
+      key: 'wallet-private-key'
+    };
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockWallet);
 
-      const mockTransactions = ['tx1', 'tx2'];
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransactions);
+    const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        wallet_address: 'test-wallet-address',
-        transactions: mockTransactions,
-        limit: 5,
-        since_block: 100,
-      });
-    });
+    expect(result).toHaveLength(1);
+    expect(result[0].json).toEqual(mockWallet);
   });
 
-  describe('getStoragePrice', () => {
-    it('should get storage price successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getStoragePrice';
-        if (param === 'data_size_bytes') return 1024;
-      });
+  it('should throw error for unknown operation', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('unknownOperation');
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('500000000000');
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        data_size_bytes: 1024,
-        price_winston: '500000000000',
-        price_ar: 0.5,
-      });
-    });
-  });
-
-  describe('getTransferPrice', () => {
-    it('should get transfer price successfully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransferPrice';
-        if (param === 'data_size_bytes') return 2048;
-        if (param === 'target_address') return 'target-address-123';
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue('750000000000');
-
-      const result = await executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual({
-        data_size_bytes: 2048,
-        target_address: 'target-address-123',
-        price_winston: '750000000000',
-        price_ar: 0.75,
-      });
-    });
+    await expect(executeWalletOperations.call(mockExecuteFunctions, [{ json: {} }]))
+      .rejects.toThrow('Unknown operation: unknownOperation');
   });
 });
 
 describe('Block Resource', () => {
+	let mockExecuteFunctions: any;
+
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				baseUrl: 'https://arweave.net',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+			},
+		};
+	});
+
+	it('should get network info successfully', async () => {
+		const mockNetworkInfo = {
+			network: 'arweave.N.1',
+			version: 5,
+			release: 56,
+			height: 1234567,
+			current: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			blocks: 1234567,
+			peers: 123,
+			queue_length: 0,
+			node_state_latency: 5,
+		};
+
+		mockExecuteFunctions.getNodeParameter.mockReturnValue('getNetworkInfo');
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockNetworkInfo);
+
+		const items = [{ json: {} }];
+		const result = await executeBlockOperations.call(mockExecuteFunctions, items);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockNetworkInfo);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://arweave.net/info',
+			headers: { 'Content-Type': 'application/json' },
+			json: true,
+		});
+	});
+
+	it('should get block by height successfully', async () => {
+		const mockBlock = {
+			indep_hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			height: 1000000,
+			timestamp: 1640995200,
+			last_retarget: 1640995200,
+			diff: '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+			hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			tx_root: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+		};
+
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getBlockByHeight')
+			.mockReturnValueOnce(1000000);
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlock);
+
+		const items = [{ json: {} }];
+		const result = await executeBlockOperations.call(mockExecuteFunctions, items);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockBlock);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://arweave.net/block/height/1000000',
+			headers: { 'Content-Type': 'application/json' },
+			json: true,
+		});
+	});
+
+	it('should get block by hash successfully', async () => {
+		const mockBlock = {
+			indep_hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			height: 1000000,
+			timestamp: 1640995200,
+			last_retarget: 1640995200,
+			diff: '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+			hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			tx_root: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+		};
+
+		mockExecuteFunctions.getNodeParameter
+			.mockReturnValueOnce('getBlockByHash')
+			.mockReturnValueOnce('BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA');
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlock);
+
+		const items = [{ json: {} }];
+		const result = await executeBlockOperations.call(mockExecuteFunctions, items);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockBlock);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://arweave.net/block/hash/BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			headers: { 'Content-Type': 'application/json' },
+			json: true,
+		});
+	});
+
+	it('should get current block successfully', async () => {
+		const mockBlock = {
+			indep_hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			height: 1234567,
+			timestamp: 1640995200,
+			last_retarget: 1640995200,
+			diff: '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+			hash: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+			tx_root: 'BkJ_h-GGIwfek-cJd-RaJrOPSH0OwUKpVDF4dXJ-OGI1PNJAE2oIIkAF-5lUK4D7GHJlrqBhzSGO3ywA',
+		};
+
+		mockExecuteFunctions.getNodeParameter.mockReturnValue('getCurrentBlock');
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlock);
+
+		const items = [{ json: {} }];
+		const result = await executeBlockOperations.call(mockExecuteFunctions, items);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json).toEqual(mockBlock);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://arweave.net/current_block',
+			headers: { 'Content-Type': 'application/json' },
+			json: true,
+		});
+	});
+
+	it('should handle API errors gracefully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValue('getNetworkInfo');
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+		const items = [{ json: {} }];
+		const result = await executeBlockOperations.call(mockExecuteFunctions, items);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].json.error).toBe('Network error');
+	});
+
+	it('should throw error when continueOnFail is false', async () => {
+		mockExecuteFunctions.getNodeParameter.mockReturnValue('getNetworkInfo');
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
+		mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+
+		const items = [{ json: {} }];
+
+		await expect(executeBlockOperations.call(mockExecuteFunctions, items)).rejects.toThrow('Network error');
+	});
+});
+
+describe('GraphQL Resource', () => {
   let mockExecuteFunctions: any;
 
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        baseUrl: 'https://arweave.net',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-key', 
+        baseUrl: 'https://arweave.net' 
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
+      helpers: { 
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn() 
       },
     };
   });
 
-  describe('getBlockByHash', () => {
-    it('should retrieve block by hash successfully', async () => {
-      const mockBlockData = {
-        height: 12345,
-        hash: 'test-hash-123',
-        timestamp: 1234567890,
-        tx_root: 'tx-root-hash',
+  describe('queryTransactions', () => {
+    it('should execute GraphQL transaction query successfully', async () => {
+      const mockResponse = {
+        data: {
+          transactions: {
+            edges: [
+              {
+                node: {
+                  id: 'test-tx-id',
+                  owner: { address: 'test-address' },
+                  data: { size: 1024 }
+                }
+              }
+            ]
+          }
+        }
       };
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getBlockByHash';
-        if (paramName === 'blockHash') return 'test-hash-123';
-        return undefined;
-      });
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('queryTransactions')
+        .mockReturnValueOnce('query { transactions { edges { node { id } } } }')
+        .mockReturnValueOnce({});
+      
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlockData);
+      const result = await executeGraphQLOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
+      expect(result).toHaveLength(1);
+      expect(result[0].json).toEqual(mockResponse);
       expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://arweave.net/block/hash/test-hash-123',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'POST',
+        url: 'https://arweave.net/graphql',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'query { transactions { edges { node { id } } } }',
+          variables: {}
+        }),
         json: true,
       });
-
-      expect(result).toEqual([{
-        json: mockBlockData,
-        pairedItem: { item: 0 },
-      }]);
     });
 
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getBlockByHash';
-        if (paramName === 'blockHash') return 'invalid-hash';
-        return undefined;
-      });
-
-      const apiError = new Error('Block not found');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
-
-      await expect(
-        executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Block not found');
-    });
-  });
-
-  describe('getBlockByHeight', () => {
-    it('should retrieve block by height successfully', async () => {
-      const mockBlockData = {
-        height: 100000,
-        hash: 'height-hash-123',
-        timestamp: 1234567890,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getBlockByHeight';
-        if (paramName === 'blockHeight') return 100000;
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlockData);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://arweave.net/block/height/100000',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-
-      expect(result).toEqual([{
-        json: mockBlockData,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('getCurrentBlock', () => {
-    it('should retrieve current block successfully', async () => {
-      const mockCurrentBlock = {
-        height: 999999,
-        hash: 'current-hash-123',
-        timestamp: Date.now(),
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getCurrentBlock');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockCurrentBlock);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://arweave.net/current_block',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-
-      expect(result).toEqual([{
-        json: mockCurrentBlock,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('getNetworkInfo', () => {
-    it('should retrieve network info successfully', async () => {
-      const mockNetworkInfo = {
-        network: 'arweave.N.1',
-        version: 5,
-        height: 999999,
-        peer_count: 50,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getNetworkInfo');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockNetworkInfo);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{
-        json: mockNetworkInfo,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('getPeers', () => {
-    it('should retrieve peers list successfully', async () => {
-      const mockPeers = [
-        '192.168.1.1:1984',
-        '192.168.1.2:1984',
-        '192.168.1.3:1984',
-      ];
-
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getPeers');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockPeers);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{
-        json: mockPeers,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('getHashList', () => {
-    it('should retrieve hash list successfully', async () => {
-      const mockHashList = [
-        'hash1',
-        'hash2',
-        'hash3',
-      ];
-
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getHashList');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockHashList);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{
-        json: mockHashList,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('getWalletList', () => {
-    it('should retrieve wallet list successfully', async () => {
-      const mockWalletList = {
-        wallet_list: {
-          'address1': { balance: '1000000000' },
-          'address2': { balance: '2000000000' },
-        },
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getWalletList';
-        if (paramName === 'blockHashForWallet') return 'wallet-block-hash';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockWalletList);
-
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://arweave.net/wallet_list/wallet-block-hash',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-
-      expect(result).toEqual([{
-        json: mockWalletList,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle continue on fail', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('getCurrentBlock');
+    it('should handle query transactions error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('queryTransactions')
+        .mockReturnValueOnce('invalid query')
+        .mockReturnValueOnce({});
+      
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('GraphQL syntax error'));
       mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+      const result = await executeGraphQLOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].json.error).toBe('GraphQL syntax error');
+    });
+  });
+
+  describe('queryBlocks', () => {
+    it('should execute GraphQL block query successfully', async () => {
+      const mockResponse = {
+        data: {
+          blocks: {
+            edges: [
+              {
+                node: {
+                  id: 'test-block-id',
+                  height: 12345,
+                  timestamp: 1640995200
+                }
+              }
+            ]
+          }
+        }
+      };
+
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('queryBlocks')
+        .mockReturnValueOnce('query { blocks { edges { node { id height } } } }')
+        .mockReturnValueOnce({ first: 10 });
+      
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+      const result = await executeGraphQLOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].json).toEqual(mockResponse);
+      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+        method: 'POST',
+        url: 'https://arweave.net/graphql',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'query { blocks { edges { node { id height } } } }',
+          variables: { first: 10 }
+        }),
+        json: true,
+      });
+    });
+
+    it('should handle query blocks error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('queryBlocks')
+        .mockReturnValueOnce('query { blocks }')
+        .mockReturnValueOnce({});
+      
       mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Network error'));
 
-      const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
+      await expect(executeGraphQLOperations.call(mockExecuteFunctions, [{ json: {} }]))
+        .rejects.toThrow('Network error');
+    });
+  });
+});
 
-      expect(result).toEqual([{
-        json: {
-          error: 'Network error',
-          operation: 'getCurrentBlock',
-          itemIndex: 0,
+describe('Price Resource', () => {
+  let mockExecuteFunctions: any;
+
+  beforeEach(() => {
+    mockExecuteFunctions = {
+      getNodeParameter: jest.fn(),
+      getCredentials: jest.fn().mockResolvedValue({ 
+        baseUrl: 'https://arweave.net'
+      }),
+      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+      continueOnFail: jest.fn().mockReturnValue(false),
+      helpers: { 
+        httpRequest: jest.fn(),
+        requestWithAuthentication: jest.fn() 
+      },
+    };
+  });
+
+  describe('getStoragePrice operation', () => {
+    it('should get storage price successfully', async () => {
+      const mockPrice = '123456789';
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getStoragePrice')
+        .mockReturnValueOnce(1024);
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockPrice);
+
+      const result = await executePriceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+        method: 'GET',
+        url: 'https://arweave.net/price/1024',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        pairedItem: { item: 0 },
-      }]);
+        json: true
+      });
+      expect(result).toEqual([{ json: mockPrice, pairedItem: { item: 0 } }]);
     });
 
-    it('should throw error for unknown operation', async () => {
-      mockExecuteFunctions.getNodeParameter.mockReturnValue('unknownOperation');
+    it('should handle getStoragePrice error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getStoragePrice')
+        .mockReturnValueOnce(1024);
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      await expect(
-        executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow('Unknown operation: unknownOperation');
+      const result = await executePriceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+    });
+  });
+
+  describe('getTransferPrice operation', () => {
+    it('should get transfer price successfully', async () => {
+      const mockPrice = '987654321';
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getTransferPrice')
+        .mockReturnValueOnce(2048)
+        .mockReturnValueOnce('target-address-123');
+      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockPrice);
+
+      const result = await executePriceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+        method: 'GET',
+        url: 'https://arweave.net/price/2048/target-address-123',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        json: true
+      });
+      expect(result).toEqual([{ json: mockPrice, pairedItem: { item: 0 } }]);
+    });
+
+    it('should handle getTransferPrice error', async () => {
+      mockExecuteFunctions.getNodeParameter
+        .mockReturnValueOnce('getTransferPrice')
+        .mockReturnValueOnce(2048)
+        .mockReturnValueOnce('target-address-123');
+      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Transfer price error'));
+      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+      const result = await executePriceOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+      expect(result).toEqual([{ json: { error: 'Transfer price error' }, pairedItem: { item: 0 } }]);
     });
   });
 });
