@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-A comprehensive n8n community node for Arweave, the permanent data storage protocol. This node provides 6 resources (Transaction, Data, GraphQLQuery, SmartWeaveContract, Wallet, Block) enabling permanent data storage, blockchain queries, smart contract interactions, and wallet management directly within your n8n workflows.
+This n8n community node provides comprehensive integration with the Arweave permanent data storage network. It includes 5 resources with capabilities for transaction management, wallet operations, block exploration, GraphQL querying, and price tracking across the Arweave ecosystem.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![Arweave](https://img.shields.io/badge/Arweave-Compatible-green)
-![Permanent Storage](https://img.shields.io/badge/Storage-Permanent-orange)
-![SmartWeave](https://img.shields.io/badge/SmartWeave-Enabled-purple)
+![Arweave](https://img.shields.io/badge/Arweave-Compatible-orange)
+![Permaweb](https://img.shields.io/badge/Permaweb-Ready-green)
+![AR Token](https://img.shields.io/badge/AR-Token-red)
 
 ## Features
 
-- **Permanent Data Storage** - Upload files and data to Arweave's permanent storage network with guaranteed availability
-- **Transaction Management** - Create, submit, and query Arweave transactions with full metadata support
-- **GraphQL Queries** - Execute complex queries against Arweave's GraphQL gateway for advanced data retrieval
-- **SmartWeave Contracts** - Deploy, interact with, and query SmartWeave smart contracts on Arweave
-- **Wallet Operations** - Generate wallets, check balances, and manage AR token transactions
-- **Block Explorer** - Retrieve block information and network statistics from the Arweave blockchain
-- **Flexible Authentication** - Support for wallet-based authentication and API key integration
-- **Content Type Support** - Handle various file types and data formats with automatic MIME type detection
+- **Transaction Management** - Create, send, and track Arweave transactions with data permanence guarantees
+- **Wallet Operations** - Generate wallets, check balances, and manage AR token transfers
+- **Block Explorer** - Query block information, heights, and network statistics
+- **GraphQL Integration** - Execute complex queries against Arweave's GraphQL endpoint for advanced data retrieval
+- **Price Monitoring** - Real-time AR token price tracking and historical data analysis
+- **Data Permanence** - Store data permanently on the Arweave network with cryptographic verification
+- **Gateway Support** - Compatible with multiple Arweave gateway endpoints for reliability
+- **Metadata Handling** - Full support for transaction tags and metadata management
 
 ## Installation
 
@@ -61,9 +61,9 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| Wallet Key | JWK (JSON Web Key) for your Arweave wallet | Yes |
-| Gateway URL | Arweave gateway URL (default: https://arweave.net) | No |
-| API Key | Optional API key for enhanced gateway access | No |
+| API Key | Arweave API key or wallet private key (JWK format) | Yes |
+| Gateway URL | Custom Arweave gateway endpoint (defaults to arweave.net) | No |
+| Environment | Select mainnet or testnet environment | Yes |
 
 ## Resources & Operations
 
@@ -71,85 +71,79 @@ n8n start
 
 | Operation | Description |
 |-----------|-------------|
-| Create | Create a new Arweave transaction with data and tags |
-| Submit | Submit a signed transaction to the network |
+| Create | Create a new Arweave transaction with data or AR transfer |
+| Send | Submit a signed transaction to the Arweave network |
 | Get | Retrieve transaction details by transaction ID |
 | Get Status | Check the confirmation status of a transaction |
-| Get Data | Retrieve the data payload from a transaction |
-| Search | Search for transactions using filters and tags |
+| Get Data | Download data content from a transaction |
+| List | Get transactions for a specific wallet address |
 
-### 2. Data
-
-| Operation | Description |
-|-----------|-------------|
-| Upload | Upload data or files to Arweave with permanent storage |
-| Download | Download data from Arweave by transaction ID |
-| Get Metadata | Retrieve metadata and tags for stored data |
-| Verify | Verify data integrity and authenticity |
-
-### 3. GraphQLQuery
+### 2. Wallet
 
 | Operation | Description |
 |-----------|-------------|
-| Execute Query | Run custom GraphQL queries against Arweave's data |
-| Get Transactions | Query transactions with advanced filtering |
-| Get Blocks | Query block information using GraphQL |
-| Get Tags | Search and filter by transaction tags |
-
-### 4. SmartWeaveContract
-
-| Operation | Description |
-|-----------|-------------|
-| Deploy | Deploy a new SmartWeave contract to Arweave |
-| Interact | Send interactions to existing SmartWeave contracts |
-| Read State | Read the current state of a SmartWeave contract |
-| Get Contract | Retrieve contract source code and initial state |
-| Get Interactions | List all interactions for a contract |
-
-### 5. Wallet
-
-| Operation | Description |
-|-----------|-------------|
-| Generate | Generate a new Arweave wallet |
+| Generate | Create a new Arweave wallet and export JWK |
 | Get Balance | Check AR token balance for a wallet address |
-| Get Address | Get the wallet address from a JWK |
-| Transfer | Transfer AR tokens between wallets |
-| Get Transactions | List transactions for a specific wallet |
+| Get Address | Get wallet address from JWK private key |
+| Get Public Key | Extract public key from wallet credentials |
 
-### 6. Block
+### 3. Block
 
 | Operation | Description |
 |-----------|-------------|
-| Get Current | Get the current block height and hash |
-| Get Block | Retrieve block details by height or hash |
-| Get Block Transactions | List all transactions in a specific block |
-| Get Network Info | Get network statistics and information |
+| Get | Retrieve block information by block hash or height |
+| Get Current | Get the latest block information |
+| Get Height | Get current network block height |
+| Get Hash | Get block hash by height number |
+
+### 4. GraphQL
+
+| Operation | Description |
+|-----------|-------------|
+| Query | Execute custom GraphQL queries against Arweave |
+| Get Transactions | Query transactions with filtering and pagination |
+| Get Blocks | Query block data with advanced filters |
+| Search Tags | Search transactions by tag name and value |
+
+### 5. Price
+
+| Operation | Description |
+|-----------|-------------|
+| Get Current | Get current AR token price in various currencies |
+| Get Historical | Retrieve historical price data for specified date range |
+| Get Market Data | Get comprehensive market data including volume and market cap |
 
 ## Usage Examples
 
 ```javascript
-// Upload permanent data to Arweave
+// Create and send a data transaction
 {
   "data": "Hello, permanent web!",
-  "tags": {
-    "Content-Type": "text/plain",
-    "App-Name": "n8n-workflow"
-  }
+  "tags": [
+    {"name": "Content-Type", "value": "text/plain"},
+    {"name": "App-Name", "value": "MyApp"}
+  ],
+  "target": "",
+  "quantity": "0"
 }
 ```
 
 ```javascript
-// Query transactions by tag
+// Query transactions using GraphQL
 {
   "query": `{
-    transactions(tags: [{name: "App-Name", values: ["n8n-workflow"]}]) {
+    transactions(
+      tags: [
+        {name: "App-Name", values: ["MyApp"]}
+      ]
+      first: 10
+    ) {
       edges {
         node {
           id
-          tags {
-            name
-            value
-          }
+          owner { address }
+          data { size }
+          tags { name value }
         }
       }
     }
@@ -158,26 +152,19 @@ n8n start
 ```
 
 ```javascript
-// Deploy SmartWeave contract
+// Check wallet balance
 {
-  "contractSource": "export async function handle(state, action) { return {state}; }",
-  "initState": {"counter": 0},
-  "tags": {
-    "App-Name": "Counter-Contract",
-    "Contract-Src": "contract-source-tx-id"
-  }
+  "address": "1seRanklLU_1VTGkEk7P0xAwMJfA7owA1JHW5KyZKlY"
 }
 ```
 
 ```javascript
-// Transfer AR tokens
+// Get historical price data
 {
-  "target": "wallet-address-here",
-  "quantity": "1000000000000", // 1 AR in winston
-  "tags": {
-    "Type": "transfer",
-    "App-Name": "n8n-payment"
-  }
+  "currency": "USD",
+  "fromDate": "2024-01-01",
+  "toDate": "2024-01-31",
+  "interval": "daily"
 }
 ```
 
@@ -185,12 +172,12 @@ n8n start
 
 | Error | Description | Solution |
 |-------|-------------|----------|
-| `WALLET_NOT_FOUND` | JWK wallet key is invalid or missing | Verify wallet key format and ensure it's properly configured |
-| `INSUFFICIENT_FUNDS` | Not enough AR tokens for transaction | Check wallet balance and ensure sufficient funds for data upload |
-| `TRANSACTION_NOT_FOUND` | Transaction ID does not exist | Verify transaction ID format and ensure transaction exists |
-| `NETWORK_ERROR` | Gateway connection failed | Check network connectivity and try alternative gateway |
-| `INVALID_CONTRACT_ID` | SmartWeave contract ID is invalid | Ensure contract ID is a valid Arweave transaction ID |
-| `GRAPHQL_SYNTAX_ERROR` | Invalid GraphQL query syntax | Review query syntax against Arweave GraphQL schema |
+| Invalid JWK Format | Wallet private key is not in correct JWK format | Ensure the API key field contains valid JWK JSON |
+| Insufficient Balance | Not enough AR tokens for transaction | Check wallet balance and add funds if needed |
+| Transaction Not Found | Transaction ID does not exist on network | Verify transaction ID and check network status |
+| Gateway Timeout | Arweave gateway is not responding | Try different gateway URL or retry later |
+| Invalid GraphQL Query | Malformed GraphQL syntax or query | Validate GraphQL query syntax and structure |
+| Rate Limit Exceeded | Too many requests to Arweave gateway | Implement delays between requests or use different gateway |
 
 ## Development
 
@@ -236,4 +223,4 @@ Contributions are welcome! Please ensure:
 
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-arweave/issues)
 - **Arweave Documentation**: [docs.arweave.org](https://docs.arweave.org)
-- **SmartWeave Guide**: [github.com/ArweaveTeam/SmartWeave](https://github.com/ArweaveTeam/SmartWeave)
+- **Arweave Community**: [discord.gg/arweave](https://discord.gg/arweave)
