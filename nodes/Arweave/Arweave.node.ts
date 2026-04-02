@@ -73,6 +73,14 @@ export class Arweave implements INodeType {
           {
             name: 'Block',
             value: 'block',
+          },
+          {
+            name: 'GraphQL',
+            value: 'graphQL',
+          },
+          {
+            name: 'Price',
+            value: 'price',
           }
         ],
         default: 'transaction',
@@ -130,6 +138,12 @@ export class Arweave implements INodeType {
       value: 'getTransactionOffset',
       description: 'Get byte offset of transaction in weave',
       action: 'Get transaction offset',
+    },
+    {
+      name: 'Create Transaction',
+      value: 'createTransaction',
+      description: 'Create and submit a new data transaction',
+      action: 'Create transaction',
     },
   ],
   default: 'submitTransaction',
@@ -331,6 +345,12 @@ export class Arweave implements INodeType {
       description: 'Calculate transfer cost to target address',
       action: 'Get transfer price',
     },
+    {
+      name: 'Generate Wallet',
+      value: 'generateWallet',
+      description: 'Generate new Arweave wallet',
+      action: 'Generate wallet',
+    },
   ],
   default: 'getWalletBalance',
 },
@@ -390,6 +410,40 @@ export class Arweave implements INodeType {
   ],
   default: 'getBlockByHash',
 },
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: { show: { resource: ['graphQL'] } },
+  options: [
+    { name: 'Query Transactions', value: 'queryTransactions', description: 'Query transactions with advanced GraphQL filters', action: 'Query transactions' },
+    { name: 'Query Blocks', value: 'queryBlocks', description: 'Query blocks using GraphQL', action: 'Query blocks' }
+  ],
+  default: 'queryTransactions',
+},
+{
+  displayName: 'Operation',
+  name: 'operation',
+  type: 'options',
+  noDataExpression: true,
+  displayOptions: { show: { resource: ['price'] } },
+  options: [
+    {
+      name: 'Get Storage Price',
+      value: 'getStoragePrice',
+      description: 'Get price in AR for storing specified bytes',
+      action: 'Get storage price'
+    },
+    {
+      name: 'Get Transfer Price',
+      value: 'getTransferPrice',
+      description: 'Get price for data transfer to target',
+      action: 'Get transfer price'
+    }
+  ],
+  default: 'getStoragePrice',
+},
       // Parameter definitions
 {
   displayName: 'Transaction Data',
@@ -432,6 +486,110 @@ export class Arweave implements INodeType {
   },
   default: '',
   description: 'The ID of the transaction to retrieve',
+},
+{
+	displayName: 'Data',
+	name: 'data',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['createTransaction'],
+		},
+	},
+	default: '',
+	description: 'The data to store in the transaction',
+},
+{
+	displayName: 'Wallet',
+	name: 'wallet',
+	type: 'string',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['createTransaction'],
+		},
+	},
+	default: '',
+	description: 'The wallet address or private key for signing the transaction',
+},
+{
+	displayName: 'Tags',
+	name: 'tags',
+	type: 'fixedCollection',
+	typeOptions: {
+		multipleValues: true,
+	},
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['createTransaction'],
+		},
+	},
+	default: {},
+	options: [
+		{
+			name: 'tag',
+			displayName: 'Tag',
+			values: [
+				{
+					displayName: 'Name',
+					name: 'name',
+					type: 'string',
+					default: '',
+				},
+				{
+					displayName: 'Value',
+					name: 'value',
+					type: 'string',
+					default: '',
+				},
+			],
+		},
+	],
+	description: 'Tags to attach to the transaction',
+},
+{
+	displayName: 'Target',
+	name: 'target',
+	type: 'string',
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['createTransaction'],
+		},
+	},
+	default: '',
+	description: 'Target wallet address for the transaction',
+},
+{
+	displayName: 'Quantity',
+	name: 'quantity',
+	type: 'string',
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['createTransaction'],
+		},
+	},
+	default: '',
+	description: 'Amount of AR tokens to send (in Winston)',
+},
+{
+	displayName: 'Signed Transaction',
+	name: 'signedTransaction',
+	type: 'json',
+	required: true,
+	displayOptions: {
+		show: {
+			resource: ['transaction'],
+			operation: ['submitTransaction'],
+		},
+	},
+	default: '{}',
+	description: 'The signed transaction object to submit',
 },
 {
   displayName: 'Data Payload',
@@ -1080,6 +1238,36 @@ export class Arweave implements INodeType {
   description: 'Target address for the transfer price calculation',
 },
 {
+  displayName: 'Wallet Address',
+  name: 'walletAddress',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['wallet'],
+      operation: ['getWalletBalance']
+    }
+  },
+  default: '',
+  placeholder: 'Enter wallet address',
+  description: 'The Arweave wallet address to check balance for'
+},
+{
+  displayName: 'Wallet Address',
+  name: 'walletAddress',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['wallet'],
+      operation: ['getLastTransaction']
+    }
+  },
+  default: '',
+  placeholder: 'Enter wallet address',
+  description: 'The Arweave wallet address to get last transaction for'
+},
+{
   displayName: 'Block Hash',
   name: 'blockHash',
   type: 'string',
@@ -1121,6 +1309,64 @@ export class Arweave implements INodeType {
   default: '',
   description: 'The block hash to get wallet list for',
 },
+{
+  displayName: 'GraphQL Query',
+  name: 'query',
+  type: 'string',
+  typeOptions: {
+    rows: 10,
+  },
+  displayOptions: {
+    show: {
+      resource: ['graphQL'],
+      operation: ['queryTransactions', 'queryBlocks'],
+    },
+  },
+  default: '',
+  required: true,
+  description: 'The GraphQL query to execute',
+},
+{
+  displayName: 'Variables',
+  name: 'variables',
+  type: 'json',
+  displayOptions: {
+    show: {
+      resource: ['graphQL'],
+      operation: ['queryTransactions', 'queryBlocks'],
+    },
+  },
+  default: '{}',
+  description: 'Variables to pass with the GraphQL query',
+},
+{
+  displayName: 'Bytes',
+  name: 'bytes',
+  type: 'number',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['price'],
+      operation: ['getStoragePrice', 'getTransferPrice']
+    }
+  },
+  default: 1024,
+  description: 'Number of bytes for pricing calculation'
+},
+{
+  displayName: 'Target Address',
+  name: 'target',
+  type: 'string',
+  required: true,
+  displayOptions: {
+    show: {
+      resource: ['price'],
+      operation: ['getTransferPrice']
+    }
+  },
+  default: '',
+  description: 'Target address for data transfer pricing'
+},
     ],
   };
 
@@ -1141,6 +1387,10 @@ export class Arweave implements INodeType {
         return [await executeWalletOperations.call(this, items)];
       case 'block':
         return [await executeBlockOperations.call(this, items)];
+      case 'graphQL':
+        return [await executeGraphQLOperations.call(this, items)];
+      case 'price':
+        return [await executePriceOperations.call(this, items)];
       default:
         throw new NodeOperationError(this.getNode(), `The resource "${resource}" is not supported`);
     }
@@ -1283,6 +1533,44 @@ async function executeTransactionOperations(
           result = await this.helpers.httpRequest(options) as any;
           break;
         }
+
+        case 'createTransaction': {
+					const data = this.getNodeParameter('data', i) as string;
+					const wallet = this.getNodeParameter('wallet', i) as string;
+					const tags = this.getNodeParameter('tags.tag', i, []) as Array<{ name: string; value: string }>;
+					const target = this.getNodeParameter('target', i) as string;
+					const quantity = this.getNodeParameter('quantity', i) as string;
+
+					const transactionData: any = {
+						data: Buffer.from(data).toString('base64'),
+						tags: tags.map((tag: any) => ({
+							name: Buffer.from(tag.name).toString('base64'),
+							value: Buffer.from(tag.value).toString('base64'),
+						})),
+					};
+
+					if (target) {
+						transactionData.target = target;
+					}
+
+					if (quantity) {
+						transactionData.quantity = quantity;
+					}
+
+					const options: any = {
+						method: 'POST',
+						url: `${credentials.baseUrl || 'https://arweave.net'}/tx`,
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${credentials.apiKey}`,
+						},
+						body: transactionData,
+						json: true,
+					};
+
+					result = await this.helpers.httpRequest(options) as any;
+					break;
+				}
         
         default:
           throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
@@ -1836,522 +2124,4 @@ async function executeSmartWeaveContractOperations(
 
           const options: any = {
             method: 'POST',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/tx`,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            body: txData,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getContractState': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/contract?id=${contractId}`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'interactWithContract': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-          const inputData = this.getNodeParameter('inputData', i) as any;
-          const tags = this.getNodeParameter('tags', i, []) as any[];
-
-          const txTags = [
-            { name: 'App-Name', value: 'SmartWeaveAction' },
-            { name: 'App-Version', value: '0.3.0' },
-            { name: 'Contract', value: contractId },
-            { name: 'Input', value: JSON.stringify(inputData) },
-            ...tags,
-          ];
-
-          const txData = {
-            tags: txTags,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/tx`,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            body: txData,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getContractInteractions': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-          const limit = this.getNodeParameter('limit', i, 10) as number;
-          const sortKey = this.getNodeParameter('sortKey', i, 'HEIGHT_DESC') as string;
-
-          const query = `
-            query {
-              transactions(
-                tags: [
-                  { name: "Contract", values: ["${contractId}"] }
-                  { name: "App-Name", values: ["SmartWeaveAction"] }
-                ]
-                first: ${limit}
-                sort: ${sortKey}
-              ) {
-                edges {
-                  node {
-                    id
-                    owner {
-                      address
-                    }
-                    tags {
-                      name
-                      value
-                    }
-                    block {
-                      height
-                      timestamp
-                    }
-                  }
-                }
-              }
-            }
-          `;
-
-          const options: any = {
-            method: 'POST',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/graphql`,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            body: { query },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'readContractState': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-          const blockHeight = this.getNodeParameter('blockHeight', i, 0) as number;
-
-          let url = `${credentials.baseUrl || 'https://arweave.net'}/contract?id=${contractId}`;
-          if (blockHeight > 0) {
-            url += `&height=${blockHeight}`;
-          }
-
-          const options: any = {
-            method: 'POST',
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getContractBalance': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/wallet/${contractId}/balance`,
-            headers: {
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            json: true,
-          };
-
-          const balance = await this.helpers.httpRequest(options) as any;
-          result = { contractId, balance: parseInt(balance) / 1000000000000 }; // Convert from winston to AR
-          break;
-        }
-
-        case 'dryRunInteraction': {
-          const contractId = this.getNodeParameter('contractId', i) as string;
-          const inputData = this.getNodeParameter('inputData', i) as any;
-          const caller = this.getNodeParameter('caller', i, '') as string;
-
-          const dryRunData = {
-            contractId,
-            input: inputData,
-            caller: caller || undefined,
-          };
-
-          const options: any = {
-            method: 'POST',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/contract/dry-run`,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey || ''}`,
-            },
-            body: dryRunData,
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({ json: result, pairedItem: { item: i } });
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i } 
-        });
-      } else {
-        throw new NodeApiError(this.getNode(), error);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeWalletOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('arweaveApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-
-      switch (operation) {
-        case 'getWalletBalance': {
-          const walletAddress = this.getNodeParameter('wallet_address', i) as string;
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/wallet/${walletAddress}/balance`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            wallet_address: walletAddress,
-            balance_winston: response,
-            balance_ar: parseFloat(response) / 1000000000000,
-          };
-          break;
-        }
-
-        case 'getLastTransaction': {
-          const walletAddress = this.getNodeParameter('wallet_address', i) as string;
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/wallet/${walletAddress}/last_tx`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            wallet_address: walletAddress,
-            last_transaction_id: response,
-          };
-          break;
-        }
-
-        case 'getWalletTransactions': {
-          const walletAddress = this.getNodeParameter('wallet_address', i) as string;
-          const limit = this.getNodeParameter('limit', i, 10) as number;
-          const offset = this.getNodeParameter('offset', i, 0) as number;
-          
-          const queryParams = new URLSearchParams();
-          if (limit) queryParams.append('limit', limit.toString());
-          if (offset) queryParams.append('offset', offset.toString());
-          
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/wallet/${walletAddress}/txs?${queryParams.toString()}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            wallet_address: walletAddress,
-            transactions: response,
-            limit,
-            offset,
-          };
-          break;
-        }
-
-        case 'getFilteredTransactions': {
-          const walletAddress = this.getNodeParameter('wallet_address', i) as string;
-          const limit = this.getNodeParameter('limit', i, 10) as number;
-          const sinceBlock = this.getNodeParameter('since_block', i, 0) as number;
-          
-          const requestBody: any = {
-            limit,
-            since_block: sinceBlock,
-          };
-          
-          const options: any = {
-            method: 'POST',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/wallet/${walletAddress}/txs`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: requestBody,
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            wallet_address: walletAddress,
-            transactions: response,
-            limit,
-            since_block: sinceBlock,
-          };
-          break;
-        }
-
-        case 'getStoragePrice': {
-          const dataSizeBytes = this.getNodeParameter('data_size_bytes', i) as number;
-          
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/price/${dataSizeBytes}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            data_size_bytes: dataSizeBytes,
-            price_winston: response,
-            price_ar: parseFloat(response) / 1000000000000,
-          };
-          break;
-        }
-
-        case 'getTransferPrice': {
-          const dataSizeBytes = this.getNodeParameter('data_size_bytes', i) as number;
-          const targetAddress = this.getNodeParameter('target_address', i) as string;
-          
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl || 'https://arweave.net'}/price/${dataSizeBytes}/${targetAddress}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          
-          const response = await this.helpers.httpRequest(options) as any;
-          result = {
-            data_size_bytes: dataSizeBytes,
-            target_address: targetAddress,
-            price_winston: response,
-            price_ar: parseFloat(response) / 1000000000000,
-          };
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({ json: result, pairedItem: { item: i } });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i } 
-        });
-      } else {
-        if (error.response?.status === 404) {
-          throw new NodeApiError(this.getNode(), error, { 
-            message: 'Resource not found',
-            description: 'The requested wallet or transaction was not found on the Arweave network',
-          });
-        }
-        throw new NodeApiError(this.getNode(), error);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeBlockOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('arweaveApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-      const baseUrl = credentials?.baseUrl || 'https://arweave.net';
-
-      switch (operation) {
-        case 'getBlockByHash': {
-          const blockHash = this.getNodeParameter('blockHash', i) as string;
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/block/hash/${blockHash}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getBlockByHeight': {
-          const blockHeight = this.getNodeParameter('blockHeight', i) as number;
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/block/height/${blockHeight}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getCurrentBlock': {
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/current_block`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getNetworkInfo': {
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/info`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getPeers': {
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/peers`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getHashList': {
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/hash_list`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getWalletList': {
-          const blockHashForWallet = this.getNodeParameter('blockHashForWallet', i) as string;
-          const options: any = {
-            method: 'GET',
-            url: `${baseUrl}/wallet_list/${blockHashForWallet}`,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`, {
-            itemIndex: i,
-          });
-      }
-
-      returnData.push({
-        json: result,
-        pairedItem: { item: i },
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: {
-            error: error.message,
-            operation,
-            itemIndex: i,
-          },
-          pairedItem: { item: i },
-        });
-      } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error, { itemIndex: i });
-        } else {
-          throw new NodeOperationError(this.getNode(), error.message, { itemIndex: i });
-        }
-      }
-    }
-  }
-
-  return returnData;
-}
+            url: `${credentials.base
